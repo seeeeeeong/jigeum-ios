@@ -6,6 +6,9 @@ struct ContentView: View {
     @State private var cafes: [Cafe] = []
     @State private var isLoading = false
     @State private var showsList = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+    @State private var hasSearched = false
     @State private var searchRadius = 1000
     @State private var searchTime = Date()
     
@@ -77,6 +80,24 @@ struct ContentView: View {
                     .background(Color.black.opacity(0.7))
                     .cornerRadius(15)
                 }
+                if showError, let error = errorMessage {
+                    Color.white.edgesIgnoringSafeArea(.all)
+                    ErrorView(message: error) {
+                        showError = false
+                        performSearch()
+                    }
+                }
+
+                if hasSearched && cafes.isEmpty && !isLoading && !showError {
+                    Color.white.edgesIgnoringSafeArea(.all)
+                    EmptyResultView()
+                }
+                
+                if locationManager.authorizationStatus == .denied ||
+                   locationManager.authorizationStatus == .restricted {
+                    Color.white.edgesIgnoringSafeArea(.all)
+                    LocationPermissionView()
+                }
             }
             .navigationTitle("지금영업중")
             .navigationBarTitleDisplayMode(.inline)
@@ -112,11 +133,14 @@ struct ContentView: View {
     
     private func performSearch() {
         guard let location = locationManager.location else {
-            locationManager.requestPermission()
+            errorMessage = "위치 정보를 가져올 수 없습니다"
+            showError = true
             return
         }
         
         isLoading = true
+        hasSearched = true
+        errorMessage = nil
         
         Task {
             do {
@@ -143,7 +167,8 @@ struct ContentView: View {
                 
             } catch {
                 await MainActor.run {
-                    print("❌ 에러: \(error)")
+                    errorMessage = "검색 중 오류가 발생했습니다.\n네트워크 연결을 확인해주세요."
+                    showError = true
                     isLoading = false
                 }
             }

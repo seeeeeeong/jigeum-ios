@@ -39,7 +39,7 @@ struct SearchBar: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color.orange)
+                .background(Color(uiColor: .systemBackground))
                 .foregroundColor(.white)
                 .cornerRadius(10)
             }
