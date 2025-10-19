@@ -1,126 +1,149 @@
 import SwiftUI
-internal import _LocationEssentials
-internal import CoreLocation
+import MapKit
 
 struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
-    @State private var searchResult: String = ""
+    @State private var cafes: [Cafe] = []
     @State private var isLoading = false
+    @State private var showsList = false
+    @State private var searchRadius = 1000
+    @State private var searchTime = Date()
+    
+    @State private var region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 37.4979, longitude: 127.0276),
+        span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+    )
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-
-                Group {
-                    if let location = locationManager.location {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("현재 위치")
-                                .font(.headline)
-                            Text("위도: \(location.coordinate.latitude, specifier: "%.4f")")
-                            Text("경도: \(location.coordinate.longitude, specifier: "%.4f")")
+            ZStack {
+                MapView(cafes: cafes, region: $region)
+                
+                VStack {
+                    SearchBar(
+                        searchRadius: $searchRadius,
+                        searchTime: $searchTime,
+                        onSearch: performSearch
+                    )
+                    .padding(.horizontal)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 16) {
+                        Button {
+                            moveToCurrentLocation()
+                        } label: {
+                            Image(systemName: "location.fill")
+                                .padding()
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(radius: 3)
                         }
-                        .padding()
-                        .background(Color.green.opacity(0.1))
-                        .cornerRadius(10)
-                    } else if let error = locationManager.error {
-                        Text("\(error)")
-                            .foregroundColor(.red)
-                            .padding()
-                    } else {
-                        Text("위치 정보를 가져오는 중...")
-                            .foregroundColor(.gray)
-                    }
-                }
-                
-                if locationManager.authorizationStatus == .notDetermined {
-                    Button {
-                        locationManager.requestPermission()
-                    } label: {
-                        Label("위치 권한 요청", systemImage: "location.circle")
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                }
-                
-                if locationManager.location != nil {
-                    Button {
-                        testAPI()
-                    } label: {
-                        if isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Label("카페 검색 테스트", systemImage: "magnifyingglass")
+                        
+                        Spacer()
+                        
+                        if !cafes.isEmpty {
+                            Button {
+                                showsList = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "list.bullet")
+                                    Text("리스트 보기")
+                                        .fontWeight(.semibold)
+                                }
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(25)
+                                .shadow(radius: 3)
+                            }
                         }
                     }
                     .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.orange)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                    .disabled(isLoading)
                 }
                 
-                if !searchResult.isEmpty {
-                    ScrollView {
-                        Text(searchResult)
-                            .font(.system(.body, design: .monospaced))
-                            .padding()
+                if isLoading {
+                    Color.black.opacity(0.3)
+                        .edgesIgnoringSafeArea(.all)
+                    
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("검색 중...")
+                            .foregroundColor(.white)
+                            .fontWeight(.semibold)
                     }
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(10)
+                    .padding(30)
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(15)
                 }
-                
-                Spacer()
             }
-            .padding()
-            .navigationTitle("jigeum")
+            .navigationTitle("지금영업중")
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showsList) {
+                NavigationStack {
+                    CafeListView(cafes: cafes)
+                        .navigationTitle("카페 목록 (\(cafes.count))")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("닫기") {
+                                    showsList = false
+                                }
+                            }
+                        }
+                }
+            }
+            .onAppear {
+                if locationManager.authorizationStatus == .notDetermined {
+                    locationManager.requestPermission()
+                }
+            }
         }
     }
     
-    private func testAPI() {
+    private func moveToCurrentLocation() {
+        if let location = locationManager.location {
+            region.center = location.coordinate
+        } else {
+            locationManager.requestPermission()
+        }
+    }
+    
+    private func performSearch() {
         guard let location = locationManager.location else {
-            searchResult = "위치 정보 없음"
+            locationManager.requestPermission()
             return
         }
         
         isLoading = true
-        searchResult = "검색 중..."
         
         Task {
             do {
-                let now = Date()
                 let formatter = DateFormatter()
                 formatter.dateFormat = "HH:mm"
-                let timeString = formatter.string(from: now)
+                let timeString = formatter.string(from: searchTime)
                 
                 let result = try await APIService.shared.searchCafes(
                     lat: location.coordinate.latitude,
                     lng: location.coordinate.longitude,
                     time: timeString,
-                    radius: 1000,
+                    radius: searchRadius,
                     page: 0,
-                    size: 10
+                    size: 50
                 )
                 
                 await MainActor.run {
-                    searchResult = """
-                    검색 성공!
-                    
-                    총 \(result.totalElements)건
-                    
-                    결과 (상위 \(result.content.count)개):
-                    \(result.content.map { "• \($0.name)" }.joined(separator: "\n"))
-                    """
+                    cafes = result.content
+                    if !cafes.isEmpty {
+                        region.center = location.coordinate
+                    }
                     isLoading = false
                 }
                 
             } catch {
                 await MainActor.run {
-                    searchResult = "에러: \(error.localizedDescription)"
+                    print("❌ 에러: \(error)")
                     isLoading = false
                 }
             }
