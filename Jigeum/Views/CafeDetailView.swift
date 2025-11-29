@@ -123,37 +123,29 @@ struct CafeDetailView: View {
                     }
                     
                     Divider()
-                    
-                    HStack(spacing: 8) {
-                        Image(systemName: "location.fill")
-                            .foregroundColor(.orange)
-                        Text("위도: \(cafe.latitude, specifier: "%.6f")")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                    
-                    HStack(spacing: 8) {
-                        Image(systemName: "location.fill")
-                            .foregroundColor(.orange)
-                        Text("경도: \(cafe.longitude, specifier: "%.6f")")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                    
+
                     // 길찾기 버튼
                     Button {
                         openInMaps()
                     } label: {
-                        HStack {
+                        HStack(spacing: 8) {
                             Image(systemName: "arrow.triangle.turn.up.right.circle.fill")
+                                .font(.title3)
                             Text("길찾기")
-                                .fontWeight(.semibold)
+                                .font(.headline)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
+                        .padding(.vertical, 16)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.blue, Color.blue.opacity(0.8)]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .cornerRadius(12)
+                        .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
                 }
                 .padding()

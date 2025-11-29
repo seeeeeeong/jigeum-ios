@@ -33,52 +33,77 @@ struct ContentView: View {
                     Spacer()
                     
                     HStack(spacing: 16) {
+                        // 현재 위치 버튼
                         Button {
                             moveToCurrentLocation()
                         } label: {
                             Image(systemName: "location.fill")
-                                .padding()
-                                .background(Color.white)
-                                .clipShape(Circle())
-                                .shadow(radius: 3)
+                                .font(.system(size: 18))
+                                .foregroundColor(.blue)
+                                .frame(width: 50, height: 50)
+                                .background(
+                                    Circle()
+                                        .fill(Color(UIColor.secondarySystemGroupedBackground))
+                                        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+                                )
                         }
-                        
+
                         Spacer()
-                        
+
+                        // 리스트 보기 버튼
                         if !cafes.isEmpty {
                             Button {
                                 showsList = true
                             } label: {
-                                HStack {
+                                HStack(spacing: 8) {
                                     Image(systemName: "list.bullet")
+                                        .font(.body)
                                     Text("리스트 보기")
                                         .fontWeight(.semibold)
+                                    Text("(\(cafes.count))")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
                                 }
-                                .padding()
-                                .background(Color.blue)
                                 .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 14)
+                                .background(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [Color.blue, Color.blue.opacity(0.8)]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                                 .cornerRadius(25)
-                                .shadow(radius: 3)
+                                .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
                             }
                         }
                     }
-                    .padding()
+                    .padding(.horizontal)
+                    .padding(.bottom, 20)
                 }
                 
                 if isLoading {
-                    Color.black.opacity(0.3)
+                    Color.black.opacity(0.4)
                         .edgesIgnoringSafeArea(.all)
-                    
-                    VStack(spacing: 16) {
+
+                    VStack(spacing: 20) {
                         ProgressView()
-                            .scaleEffect(1.5)
+                            .scaleEffect(1.8)
+                            .tint(.white)
                         Text("검색 중...")
+                            .font(.headline)
                             .foregroundColor(.white)
-                            .fontWeight(.semibold)
+                        Text("주변 카페를 찾고 있어요")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.8))
                     }
-                    .padding(30)
-                    .background(Color.black.opacity(0.7))
-                    .cornerRadius(15)
+                    .padding(40)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.black.opacity(0.75))
+                            .shadow(color: Color.black.opacity(0.3), radius: 20)
+                    )
                 }
                 if showError, let error = errorMessage {
                     Color.white.edgesIgnoringSafeArea(.all)
@@ -101,8 +126,6 @@ struct ContentView: View {
                     LocationPermissionView()
                 }
             }
-            .navigationTitle("지금영업중")
-            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showsList) {
                 NavigationStack {
                     CafeListView(cafes: cafes)
@@ -204,6 +227,8 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
 }

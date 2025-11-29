@@ -16,17 +16,38 @@ struct MapView: View {
                         selectedCafe = cafe
                         showDetail = true
                     } label: {
-                        VStack(spacing: 0) {
-                            Image(systemName: "cup.and.saucer.fill")
-                                .foregroundColor(.white)
-                                .padding(8)
-                                .background(Color.orange)
-                                .clipShape(Circle())
-                                .shadow(radius: 3)
-                            
-                            Image(systemName: "arrowtriangle.down.fill")
-                                .foregroundColor(.orange)
-                                .offset(y: -5)
+                        ZStack {
+                            // 그림자 효과
+                            Circle()
+                                .fill(Color.black.opacity(0.2))
+                                .frame(width: 44, height: 44)
+                                .offset(y: 2)
+
+                            VStack(spacing: 0) {
+                                // 메인 마커
+                                ZStack {
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [Color.orange, Color.orange.opacity(0.7)]),
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+                                        .frame(width: 40, height: 40)
+                                        .shadow(color: Color.orange.opacity(0.4), radius: 4, x: 0, y: 2)
+
+                                    Image(systemName: "cup.and.saucer.fill")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 16, weight: .semibold))
+                                }
+
+                                // 하단 화살표
+                                Image(systemName: "arrowtriangle.down.fill")
+                                    .foregroundColor(.orange)
+                                    .font(.system(size: 12))
+                                    .offset(y: -6)
+                            }
                         }
                     }
                 }
@@ -41,11 +62,14 @@ struct MapView: View {
                     span: region.span.longitudeDelta
                 )
                 
-                Circle()
-                    .stroke(Color.blue.opacity(0.3), lineWidth: 2)
-                    .fill(Color.blue.opacity(0.1))
-                    .frame(width: radiusInPoints * 2, height: radiusInPoints * 2)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                ZStack {
+                    Circle()
+                        .fill(Color.blue.opacity(0.1))
+                    Circle()
+                        .stroke(Color.blue.opacity(0.3), lineWidth: 2)
+                }
+                .frame(width: radiusInPoints * 2, height: radiusInPoints * 2)
+                .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
                 
                 VStack(spacing: 0) {
                     Image(systemName: "scope")

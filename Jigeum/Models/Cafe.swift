@@ -1,5 +1,5 @@
 import Foundation
-internal import CoreLocation
+import CoreLocation
 
 struct Cafe: Codable, Identifiable {
     let id: Int
